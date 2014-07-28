@@ -46,7 +46,7 @@ namespace DefinitionTableMaker
         /// </summary>
         private void btnCreate_Click(object sender, EventArgs e)
         {
-            if (!this.InputCheck()) { return; }
+            if (!this.areListBoxesChecked()) { return; }
 
             DataTable dt;
             try
@@ -76,7 +76,7 @@ namespace DefinitionTableMaker
         /// リストボックス選択チェック
         /// </summary>
         /// <returns>True:正常 False:未選択</returns>
-        private bool InputCheck()
+        private bool areListBoxesChecked()
         {
             var target = this.Controls.OfType<ListBox>()
                 .where(x => x.SelectedValue == null)
