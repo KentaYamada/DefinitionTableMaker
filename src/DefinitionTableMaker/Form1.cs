@@ -115,20 +115,13 @@ namespace DefinitionTableMaker
                 }
                 using (var sw = new StreamWriter(this.saveFileDialog1.FileName, false, Encoding.GetEncoding("utf-8")))
                 {
-                    try
-                    {
-                        sw.Write(html);
-                        MessageBox.Show("できあがり～");
-
-                        this.lstTables.DataSource = null;
-                    }
-                    finally
-                    {
-                        sw.Close();
-                    }
+                    sw.Write(html);
+                    MessageBox.Show("できあがり～");
+                    this.lstTables.DataSource = null;
                 }
             }
         }
+
         /// <summary>
         /// データベース一覧取得
         /// </summary>
@@ -287,14 +280,7 @@ namespace DefinitionTableMaker
             using (var comm = new SqlCommand(sql.ToString(), conn))
             using (var adpt = new SqlDataAdapter(comm))
             {
-                try
-                {
-                    adpt.Fill(dt);
-                }
-                finally
-                {
-                    conn.Close();
-                }
+                adpt.Fill(dt);
             }
             return dt;
         }
