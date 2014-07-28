@@ -61,8 +61,7 @@ namespace DefinitionTableMaker
                 MessageBox.Show(ex.Message, "アプリケーションエラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
-            string html = this.CreateHtml(dt);
-
+            var html = this.CreateHtml(dt);
             try
             {
                 this.SaveFile(html);
@@ -86,11 +85,10 @@ namespace DefinitionTableMaker
 
             if (0 < target.Count)
             {
-                string s = string.Format("{0}を選択して下さい。", target[0].Tag);
+                var s = string.Format("{0}を選択して下さい。", target[0].Tag);
                 MessageBox.Show(s, "エラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 result = false; ;
             }
-
             return result;
         }
 
@@ -104,7 +102,7 @@ namespace DefinitionTableMaker
 
             if (DialogResult.OK == this.saveFileDialog1.ShowDialog())
             {
-                string s = Path.GetExtension(this.saveFileDialog1.FileName).Replace(".","");
+                var s = Path.GetExtension(this.saveFileDialog1.FileName).Replace(".","");
 
                 if (s != "html" || s != "html")
                 {
@@ -295,18 +293,18 @@ namespace DefinitionTableMaker
         {
             var dt = new DataTable();
             using (var conn = new SqlConnection(connectString))
-                using (var comm = new SqlCommand(sql.ToString(), conn))
-                using (var adpt = new SqlDataAdapter(comm))
+            using (var comm = new SqlCommand(sql.ToString(), conn))
+            using (var adpt = new SqlDataAdapter(comm))
+            {
+                try
                 {
-                    try
-                    {
-                        adpt.Fill(dt);
-                    }
-                    finally
-                    {
-                        conn.Close();
-                    }
+                    adpt.Fill(dt);
                 }
+                finally
+                {
+                    conn.Close();
+                }
+            }
             return dt;
         }
 
