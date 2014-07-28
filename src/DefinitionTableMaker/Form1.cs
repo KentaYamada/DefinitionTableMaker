@@ -48,11 +48,13 @@ namespace DefinitionTableMaker
         {
             if (!this.InputCheck()) { return; }
 
-            var dt = new DataTable();
+            DataTable dt;
             try
             {
-                dt = this.GetColumnInfo(this.lstDatabases.SelectedValue.ToString(),
-                        this.lstTables.SelectedValue.ToString());
+                dt = this.GetColumnInfo(
+                        this.lstDatabases.SelectedValue.ToString(),
+                        this.lstTables.SelectedValue.ToString()
+                        );
             }
             catch(SqlException ex)
             {
@@ -129,12 +131,10 @@ namespace DefinitionTableMaker
         /// </summary>
         private void GetDatabases()
         {
-            var dt = new DataTable();
-            string sql = "select name from sysdatabases";
-
+            DataTable dt;
             try
             {
-                dt = this.ExecuteCommand(sql, this.ConnectString);
+                dt = this.ExecuteCommand("select name from sysdatabases", this.ConnectString);
             }
             catch
             {
@@ -152,14 +152,15 @@ namespace DefinitionTableMaker
         /// <param name="dbName">DB名</param>
         private void GetTables(string dbName)
         {
-            string sql = "select t.name from sys.tables t order by t.name";
-            string connectString = string.Format("{0} Initial Catalog={1};", this.ConnectString, dbName);
+            var connectString = string.Format("{0} Initial Catalog={1};", this.ConnectString, dbName);
 
-            var dt = new DataTable();
-
+            DataTable dt;
             try
             {
-                dt = this.ExecuteCommand(sql, connectString);
+                dt = this.ExecuteCommand(
+                        "select t.name from sys.tables t order by t.name",
+                        connectString
+                        );
             }
             catch
             {
