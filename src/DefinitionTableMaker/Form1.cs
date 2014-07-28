@@ -25,7 +25,9 @@ namespace DefinitionTableMaker
         {
             try
             {
-                this.GetDatabases();
+                this.lstDatabases.DataSource = this.GetDatabases();
+                this.lstDatabases.ValueMember = "name";
+                this.lstDatabases.DisplayMember = "name";
             }
             catch(SqlException ex)
             {
@@ -125,21 +127,9 @@ namespace DefinitionTableMaker
         /// <summary>
         /// データベース一覧取得
         /// </summary>
-        private void GetDatabases()
+        private DataTable GetDatabases()
         {
-            DataTable dt;
-            try
-            {
-                dt = this.ExecuteCommand("select name from sysdatabases", this.ConnectString);
-            }
-            catch
-            {
-                throw;
-            }
-
-            this.lstDatabases.ValueMember = "name";
-            this.lstDatabases.DisplayMember = "name";
-            this.lstDatabases.DataSource = dt;
+            return this.ExecuteCommand("select name from sysdatabases", this.ConnectString);
         }
 
         /// <summary>
