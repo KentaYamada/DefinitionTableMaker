@@ -170,53 +170,51 @@ namespace DefinitionTableMaker
         /// <returns>取得結果@DataTable</returns>
         private DataTable GetColumnInfo(string dbName, string tableName)
         {
-            var sql = new StringBuilder();
-
-            sql.Length = 0;
-            sql.AppendLine("select");
-            sql.AppendLine("     c.ORDINAL_POSITION as No --");
-            sql.AppendLine("    ,c.COLUMN_NAME      as 列ID --物理ID");
-            sql.AppendLine("    ,c.DATA_TYPE        as データ型 --データ型");
-            sql.AppendLine("    ,case");
-            sql.AppendLine("       when c.CHARACTER_MAXIMUM_LENGTH is null then '-'");
-            sql.AppendLine("       when c.CHARACTER_MAXIMUM_LENGTH = '-1' then 'max'");
-            sql.AppendLine("       else convert(varchar,c.CHARACTER_MAXIMUM_LENGTH)");
-            sql.AppendLine("     end as バイト数");
-            sql.AppendLine("    ,case");
-            sql.AppendLine("       when c.NUMERIC_PRECISION is null then '-'");
-            sql.AppendLine("       else convert(varchar,c.NUMERIC_PRECISION)");
-            sql.AppendLine("     end as 桁数");
-            sql.AppendLine("    ,case");
-            sql.AppendLine("       when c.NUMERIC_SCALE is null then '-'");
-            sql.AppendLine("       else convert(varchar, c.NUMERIC_SCALE)");
-            sql.AppendLine("     end as 精度");
-            sql.AppendLine("    ,case");
-            sql.AppendLine("       when c.IS_NULLABLE = 'YES' then '○'");
-            sql.AppendLine("       else ''");
-            sql.AppendLine("     end as Null許容");
-            sql.AppendLine("from information_schema.columns c");
-            sql.AppendLine("left join (");
-            sql.AppendLine("            select");
-            sql.AppendLine("                 k.table_catalog");
-            sql.AppendLine("                ,k.table_schema");
-            sql.AppendLine("                ,k.table_name");
-            sql.AppendLine("                ,k.column_name");
-            sql.AppendLine("                ,t.constraint_type");
-            sql.AppendLine("            from information_schema.key_column_usage k");
-            sql.AppendLine("            inner join information_schema.table_constraints t");
-            sql.AppendLine("               on t.constraint_name = k.constraint_name");
-            sql.AppendLine("            where t.constraint_type = 'primary key'");
-            sql.AppendLine("               or t.constraint_type = 'unique'");
-            sql.AppendLine("          ) p");
-            sql.AppendLine(" on c.table_catalog = p.table_catalog");
-            sql.AppendLine("and c.table_schema  = p.table_schema");
-            sql.AppendLine("and c.table_name    = p.table_name");
-            sql.AppendLine("and c.column_name   = p.column_name");
-            sql.AppendFormat("where c.TABLE_NAME = '{0}'\n", tableName);
-            sql.AppendLine("order by");
-            sql.AppendLine("   c.ordinal_position");
-
-            return this.ExecuteCommand(sql.ToString(), string.Format("{0} Initial Catalog={1};", this.ConnectString, dbName));
+            var sql = string.Format(@"
+            SELECT
+                 c.ORDINAL_POSITION as No --
+                ,c.COLUMN_NAME      as 列ID --物理ID
+                ,c.DATA_TYPE        as データ型 --データ型
+                ,CASE
+                   WHEN c.CHARACTER_MAXIMUM_LENGTH is null then '-'
+                   WHEN c.CHARACTER_MAXIMUM_LENGTH = '-1' then 'max'
+                   ELSE convert(varchar,c.CHARACTER_MAXIMUM_LENGTH)
+                 END AS バイト数
+                ,CASE
+                   WHEN c.NUMERIC_PRECISION is null then '-'
+                   ELSE convert(varchar,c.NUMERIC_PRECISION)
+                 END AS 桁数
+                ,CASE
+                   WHEN c.NUMERIC_SCALE is null then '-'
+                   ELSE convert(varchar, c.NUMERIC_SCALE)
+                 END AS 精度
+                ,CASE
+                   WHEN c.IS_NULLABLE = 'YES' then '○'
+                   ELSE ''
+                 END AS Null許容
+            FROM information_schema.columns c
+            LEFT JOIN (
+                        SELECT
+                             k.table_catalog
+                            ,k.table_schema
+                            ,k.table_name
+                            ,k.column_name
+                            ,t.constraint_type
+                        FROM information_schema.key_column_usage k
+                        INNER join information_schema.table_constraints t
+                           ON t.constraint_name = k.constraint_name
+                        WHERE t.constraint_type = 'primary key'
+                           OR t.constraint_type = 'unique'
+                      ) p
+             ON c.table_catalog = p.table_catalog
+            AND c.table_schema  = p.table_schema
+            AND c.table_name    = p.table_name
+            AND c.column_name   = p.column_name
+            WHERE c.TABLE_NAME = '{0}'
+            ORDER BY
+            c.ordinal_position"
+            , tableName);
+            return this.ExecuteCommand(sql, string.Format("{0} Initial Catalog={1};", this.ConnectString, dbName));
         }
 
         /// <summary>
