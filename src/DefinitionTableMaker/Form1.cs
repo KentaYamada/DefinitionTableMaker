@@ -38,7 +38,9 @@ namespace DefinitionTableMaker
         /// </summary>
         private void lstDatabases_DoubleClick(object sender, EventArgs e)
         {
-            this.GetTables(this.lstDatabases.SelectedValue.ToString());
+            this.lstTables.DataSource = this.GetTables(this.lstDatabases.SelectedValue.ToString());
+            this.lstTables.DisplayMember = "name";
+            this.lstTables.ValueMember = "name";
         }
 
         /// <summary>
@@ -105,7 +107,7 @@ namespace DefinitionTableMaker
 
             if (DialogResult.OK == this.saveFileDialog1.ShowDialog())
             {
-                var s = Path.GetExtension(this.saveFileDialog1.FileName).Replace(".","");
+                var s = Path.GetExtension(this.saveFileDialog1.FileName).Replace(".", "");
 
                 if (s != "html" || s != "html")
                 {
@@ -151,26 +153,13 @@ namespace DefinitionTableMaker
         /// テーブル一覧取得
         /// </summary>
         /// <param name="dbName">DB名</param>
-        private void GetTables(string dbName)
+        private DataTable GetTables(string dbName)
         {
             var connectString = string.Format("{0} Initial Catalog={1};", this.ConnectString, dbName);
-
-            DataTable dt;
-            try
-            {
-                dt = this.ExecuteCommand(
-                        "select t.name from sys.tables t order by t.name",
-                        connectString
-                        );
-            }
-            catch
-            {
-                throw;
-            }
-
-            this.lstTables.DisplayMember = "name";
-            this.lstTables.ValueMember = "name";
-            this.lstTables.DataSource = dt;
+            return this.ExecuteCommand(
+                "select t.name from sys.tables t order by t.name",
+                connectString
+            );
         }
 
         /// <summary>
