@@ -79,9 +79,9 @@ namespace DefinitionTableMaker
         private bool InputCheck()
         {
             bool result = true;
-            var target = (from x in this.Controls.OfType<ListBox>()
-                    where x.SelectedValue == null
-                    select x).ToList();
+            var target = this.Controls.OfType<ListBox>()
+                .where(x => x.SelectedValue == null)
+                .ToList();
 
             if (0 < target.Count)
             {
