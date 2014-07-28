@@ -78,18 +78,21 @@ namespace DefinitionTableMaker
         /// <returns>True:正常 False:未選択</returns>
         private bool InputCheck()
         {
-            bool result = true;
             var target = this.Controls.OfType<ListBox>()
                 .where(x => x.SelectedValue == null)
                 .ToList();
 
             if (0 < target.Count)
             {
-                var s = string.Format("{0}を選択して下さい。", target[0].Tag);
-                MessageBox.Show(s, "エラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                result = false; ;
+                MessageBox.Show(
+                    string.Format("{0}を選択して下さい。", target.First.Tag),
+                    "エラー",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+                return false
             }
-            return result;
+            return true;
         }
 
         /// <summary>
