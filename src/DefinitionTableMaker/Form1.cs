@@ -249,13 +249,14 @@ namespace DefinitionTableMaker
             html.AppendLine("  </tr>");
             html.AppendLine("  </table></br>");
             html.AppendLine("  <table>");
-            html.AppendLine("  <tr>");
             //カラムヘッダ作成
-            foreach (DataColumn col in table.Columns)
-            {
-                html.AppendFormat("    <th>{0}</th>\n", col.Caption);
-            }
+            html.AppendLine("  <tr>");
+            table.Columns
+                .Select(col => String.Format("    <th>{0}</th>\n", col.Caption))
+                .ToList()
+                .ForEach(row_str => html.AppendFormat(row_str));
             html.AppendLine("</tr>");
+
             foreach (DataRow dr in table.Rows)
             {
                 html.AppendLine("<tr>");
