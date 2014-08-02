@@ -50,9 +50,10 @@ namespace DefinitionTableMaker
         /// </summary>
         private void btnCreate_Click(object sender, EventArgs e)
         {
-            if (!this.areListBoxesChecked()) { return; }
+            if (!this.AreListBoxesChecked()) { return; }
 
-            DataTable dt;
+            DataTable dt = null;
+
             try
             {
                 dt = this.GetColumnInfo(
@@ -80,21 +81,21 @@ namespace DefinitionTableMaker
         /// リストボックス選択チェック
         /// </summary>
         /// <returns>True:正常 False:未選択</returns>
-        private bool areListBoxesChecked()
+        private bool AreListBoxesChecked()
         {
             var target = this.Controls.OfType<ListBox>()
-                .where(x => x.SelectedValue == null)
+                .Where(x => x.SelectedValue == null)
                 .ToList();
 
             if (0 < target.Count)
             {
                 MessageBox.Show(
-                    string.Format("{0}を選択して下さい。", target.First.Tag),
+                    string.Format("{0}を選択して下さい。", target.First().Tag),
                     "エラー",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning
                 );
-                return false
+				return false;
             }
             return true;
         }
@@ -234,8 +235,8 @@ namespace DefinitionTableMaker
             html.AppendLine("  <table>");
             //カラムヘッダ作成
             html.AppendLine("  <tr>");
-            table.Columns
-                .Select(col => String.Format("    <th>{0}</th>\n", col.Caption))
+            table.Columns.OfType<DataColumn>()
+                .Select(col => string.Format("    <th>{0}</th>\n", col.Caption))
                 .ToList()
                 .ForEach(row_str => html.AppendFormat(row_str));
             html.AppendLine("</tr>");
