@@ -10,56 +10,96 @@ namespace DefinitionTableMaker
 {
     public partial class Form1 : Form
     {
-        private string _dbName;
-        private readonly string ConnectString = @"Data Source=(local)\SQLEXPRESS; Integrated Security=SSPI;";
-
         public Form1()
         {
             InitializeComponent();
-            this._dbName = string.Empty;
         }
 
         /// <summary>
         /// </summary>
         private void Form1_Load(object sender, EventArgs e)
         {
+			var comm = new DBCommander();
+
             try
             {
-                this.lstDatabases.DataSource = this.GetDatabases();
-                this.lstDatabases.ValueMember = "name";
-                this.lstDatabases.DisplayMember = "name";
+				this.cmbDatabases.DataSource = comm.ExecuteCommand("select name from sysdatabases");
+                
             }
             catch(SqlException ex)
             {
                 MessageBox.Show(ex.Message, "アプリケーションエラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-        }
 
-        /// <summary>
-        /// データベース一覧ダブルクリックイベント
-        /// </summary>
-        private void lstDatabases_DoubleClick(object sender, EventArgs e)
-        {
-            this.lstTables.DataSource = this.GetTables(this.lstDatabases.SelectedValue.ToString());
-            this.lstTables.DisplayMember = "name";
-            this.lstTables.ValueMember = "name";
-        }
+		}
+
+		
+		private void cmbDatabases_SelectedValueChanged(object sender, EventArgs e)
+		{
+			
+		}
 
         /// <summary>
         /// 定義書作成クリックイベント
         /// </summary>
         private void btnCreate_Click(object sender, EventArgs e)
         {
-            if (!this.AreListBoxesChecked()) { return; }
+            if (!this.AreListBoxesChecked()) 
+			{
+				return; 
+			}
 
+			var sql = string.Format(@"
+            SELECT
+                 c.ORDINAL_POSITION as No
+                ,c.COLUMN_NAME      as 列ID
+                ,c.DATA_TYPE        as データ型
+                ,CASE
+                   WHEN c.CHARACTER_MAXIMUM_LENGTH is null then '-'
+                   WHEN c.CHARACTER_MAXIMUM_LENGTH = '-1' then 'max'
+                   ELSE convert(varchar,c.CHARACTER_MAXIMUM_LENGTH)
+                 END AS バイト数
+                ,CASE
+                   WHEN c.NUMERIC_PRECISION is null then '-'
+                   ELSE convert(varchar,c.NUMERIC_PRECISION)
+                 END AS 桁数
+                ,CASE
+                   WHEN c.NUMERIC_SCALE is null then '-'
+                   ELSE convert(varchar, c.NUMERIC_SCALE)
+                 END AS 精度
+                ,CASE
+                   WHEN c.IS_NULLABLE = 'YES' then '○'
+                   ELSE ''
+                 END AS Null許容
+            FROM information_schema.columns c
+            LEFT JOIN (
+                        SELECT
+                             k.table_catalog
+                            ,k.table_schema
+                            ,k.table_name
+                            ,k.column_name
+                            ,t.constraint_type
+                        FROM information_schema.key_column_usage k
+                        INNER join information_schema.table_constraints t
+                           ON t.constraint_name = k.constraint_name
+                        WHERE t.constraint_type = 'primary key'
+                           OR t.constraint_type = 'unique'
+                      ) p
+             ON c.table_catalog = p.table_catalog
+            AND c.table_schema  = p.table_schema
+            AND c.table_name    = p.table_name
+            AND c.column_name   = p.column_name
+            WHERE c.TABLE_NAME = '{0}'
+            ORDER BY
+            c.ordinal_position"
+			, this.cmbTables.SelectedValue);
+
+			var comm = new DBCommander(this.cmbDatabases.SelectedValue.ToString());
             DataTable dt = null;
 
             try
             {
-                dt = this.GetColumnInfo(
-                        this.lstDatabases.SelectedValue.ToString(),
-                        this.lstTables.SelectedValue.ToString()
-                        );
+				dt = comm.ExecuteCommand(sql);
             }
             catch(SqlException ex)
             {
@@ -120,85 +160,9 @@ namespace DefinitionTableMaker
                 {
                     sw.Write(html);
                     MessageBox.Show("できあがり～");
-                    this.lstTables.DataSource = null;
+                    (this.cmbTables.DataSource as DataTable).Rows.Clear();
                 }
             }
-        }
-
-        /// <summary>
-        /// データベース一覧取得
-        /// </summary>
-        private DataTable GetDatabases()
-        {
-            return this.ExecuteCommand("select name from sysdatabases", this.ConnectString);
-        }
-
-        /// <summary>
-        /// テーブル一覧取得
-        /// </summary>
-        /// <param name="dbName">DB名</param>
-        private DataTable GetTables(string dbName)
-        {
-            var connectString = string.Format("{0} Initial Catalog={1};", this.ConnectString, dbName);
-            return this.ExecuteCommand(
-                "select t.name from sys.tables t order by t.name",
-                connectString
-            );
-        }
-
-        /// <summary>
-        /// テーブル定義情報取得
-        /// </summary>
-        /// <param name="dbName">DB名</param>
-        /// <param name="tableName">テーブル名</param>
-        /// <returns>取得結果@DataTable</returns>
-        private DataTable GetColumnInfo(string dbName, string tableName)
-        {
-            var sql = string.Format(@"
-            SELECT
-                 c.ORDINAL_POSITION as No --
-                ,c.COLUMN_NAME      as 列ID --物理ID
-                ,c.DATA_TYPE        as データ型 --データ型
-                ,CASE
-                   WHEN c.CHARACTER_MAXIMUM_LENGTH is null then '-'
-                   WHEN c.CHARACTER_MAXIMUM_LENGTH = '-1' then 'max'
-                   ELSE convert(varchar,c.CHARACTER_MAXIMUM_LENGTH)
-                 END AS バイト数
-                ,CASE
-                   WHEN c.NUMERIC_PRECISION is null then '-'
-                   ELSE convert(varchar,c.NUMERIC_PRECISION)
-                 END AS 桁数
-                ,CASE
-                   WHEN c.NUMERIC_SCALE is null then '-'
-                   ELSE convert(varchar, c.NUMERIC_SCALE)
-                 END AS 精度
-                ,CASE
-                   WHEN c.IS_NULLABLE = 'YES' then '○'
-                   ELSE ''
-                 END AS Null許容
-            FROM information_schema.columns c
-            LEFT JOIN (
-                        SELECT
-                             k.table_catalog
-                            ,k.table_schema
-                            ,k.table_name
-                            ,k.column_name
-                            ,t.constraint_type
-                        FROM information_schema.key_column_usage k
-                        INNER join information_schema.table_constraints t
-                           ON t.constraint_name = k.constraint_name
-                        WHERE t.constraint_type = 'primary key'
-                           OR t.constraint_type = 'unique'
-                      ) p
-             ON c.table_catalog = p.table_catalog
-            AND c.table_schema  = p.table_schema
-            AND c.table_name    = p.table_name
-            AND c.column_name   = p.column_name
-            WHERE c.TABLE_NAME = '{0}'
-            ORDER BY
-            c.ordinal_position"
-            , tableName);
-            return this.ExecuteCommand(sql, string.Format("{0} Initial Catalog={1};", this.ConnectString, dbName));
         }
 
         /// <summary>
@@ -215,7 +179,7 @@ namespace DefinitionTableMaker
             html.AppendLine("<html>");
             html.AppendLine("<head>");
             html.AppendLine("  <meta charset=\"utf-8\">");
-            html.AppendFormat("  <title>{0}テーブル定義書</title>", this.lstTables.SelectedValue);
+            html.AppendFormat("  <title>{0}テーブル定義書</title>", this.cmbTables.SelectedValue);
             html.AppendLine("  <style type=\"text/css\">");
             html.AppendLine("    table, th, td { border:1px #000000 solid; }");
             html.AppendLine("  </style>");
@@ -225,11 +189,11 @@ namespace DefinitionTableMaker
             html.AppendLine("  <table>");
             html.AppendLine("  <tr>");
             html.AppendLine("  <th>データベース名</th>");
-            html.AppendFormat("  <td>{0}</td>\n", this.lstDatabases.SelectedValue);
+            html.AppendFormat("  <td>{0}</td>\n", this.cmbDatabases.SelectedValue);
             html.AppendLine("  </tr>");
             html.AppendLine("  <tr>");
             html.AppendLine("  <th>テーブル名</th>");
-            html.AppendFormat("  <td>{0}</td>\n", this.lstTables.SelectedValue);
+            html.AppendFormat("  <td>{0}</td>\n", this.cmbTables.SelectedValue);
             html.AppendLine("  </tr>");
             html.AppendLine("  </table></br>");
             html.AppendLine("  <table>");
@@ -258,29 +222,25 @@ namespace DefinitionTableMaker
             return html.ToString();
         }
 
-        /// <summary>
-        /// SQLコマンド実行
-        /// </summary>
-        /// <param name="sql">Select文</param>
-        /// <param name="connectString">接続文字列</param>
-        /// <returns>取得結果@DataTable</returns>
-        private DataTable ExecuteCommand(string sql, string connectString)
-        {
-            var dt = new DataTable();
-            using (var conn = new SqlConnection(connectString))
-            using (var comm = new SqlCommand(sql.ToString(), conn))
-            using (var adpt = new SqlDataAdapter(comm))
-            {
-                adpt.Fill(dt);
-            }
-            return dt;
-        }
-
         private void btnExit_Click(object sender, EventArgs e)
         {
             this.Close();
             this.Dispose();
             Application.Exit();
         }
+
+		private void cmbDatabases_Leave(object sender, EventArgs e)
+		{
+			var comm = new DBCommander(this.cmbDatabases.SelectedValue.ToString());
+
+			try
+			{
+				this.cmbTables.DataSource = comm.ExecuteCommand("select t.name from sys.tables as t order by t.name");
+			}
+			catch (SqlException ex)
+			{
+				MessageBox.Show(ex.Message, "アプリケーションエラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+			}
+		}
     }
 }
